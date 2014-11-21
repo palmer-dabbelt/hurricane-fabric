@@ -1,0 +1,9 @@
+/bin
+/obj
+/lib
+/libexec
+/check
+/.scala_dependencies
+/Makefile
+
+*~

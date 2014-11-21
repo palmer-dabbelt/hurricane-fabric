@@ -1,0 +1,21 @@
+LANGUAGES += scala
+
+LANGUAGES   += c++
+COMPILEOPTS += `ppkg-config chisel --cflags`
+
+LANGUAGES += chisel
+LINKOPTS  += `ppkg-config rocket-uncore --libs`
+
+# This library contains the Hurricane fabric generator.
+LIBRARIES   += libhurricane-fabric.jar
+COMPILEOPTS += `ppkg-config chisel --libs`
+COMPILEOPTS += `ppkg-config rocket --libs`
+COMPILEOPTS += `ppkg-config rocket-uncore --libs`
+SOURCES     += HurricaneFabric/Fabric.scala
+
+# An actual executable that can run tests against this multiplexer.
+LIBEXECS    += hurricane-fabric/test
+SOURCES     += Test/Main.scala
+COMPILEOPTS += -dFabric.ExampleConfig
+DEPLIBS     += hurricane-fabric
+SOURCES     += Test/main.c++
