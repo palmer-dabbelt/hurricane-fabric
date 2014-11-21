@@ -49,6 +49,11 @@ class ExampleConfig extends Chisel.ChiselConfig (
 
       case uncore.TLClientXactIdBits => 1
       case uncore.TLMasterXactIdBits => 1
+
+      case HurricaneFabric.ICacheLineSizeBits => 512
+      case HurricaneFabric.DCacheWordSizeBits => 64
+      case HurricaneFabric.NetworkWordSizeBits => site(HurricaneFabric.DCacheWordSizeBits)
+      case HurricaneFabric.NetworkPortCount => 4
   }},
   knobValues = {
     case "NTILES" => 2

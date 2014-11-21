@@ -2,6 +2,7 @@ package HurricaneFabric
 
 import Chisel._
 
+// The absolute size of the Hurricane array that will be generated
 case object Width extends Field[Int]
 case object Height extends Field[Int]
 
@@ -16,7 +17,8 @@ abstract trait FabricParameters extends UsesParameters {
 // cache to the rest of the world.
 class Fabric extends Module with FabricParameters {
   class IO extends Bundle {
-    val tile_link = new uncore.TileLinkIO()
+    // A single Tile Link
+    val tile_link = new uncore.TileLinkIO().asOutput
   }
   val io = new IO
 }
