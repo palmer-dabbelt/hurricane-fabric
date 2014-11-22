@@ -79,19 +79,19 @@ object ControlMessageType extends Enumeration {
 // A Halt request/response, which doesn't actually need any bits at
 // all.  The response can only be asserted after the tile has both
 // flushed and halted.
-class ControlHaltRequestBits extends Bundle {
+class ControlHaltRequestBits extends Bundle with TileIOParameters {
   val unused = Bits(width = control_word_size_bits)
 }
-class ControlHaltResponseBits extends Bundle {
+class ControlHaltResponseBits extends Bundle with TileIOParameters {
   val unused = Bits(width = control_word_size_bits)
 }
 
 // LongJump control messages cause the targeted tiles to jump to an
 // address and begin executing.
-class ControlLongJumpRequestBits extends Bundle {
+class ControlLongJumpRequestBits extends Bundle with TileIOParameters {
   val virtual_target_pc = Bits(width = control_word_size_bits)
 }
-class ControlLongJumpResponseBits extends Bundle {
+class ControlLongJumpResponseBits extends Bundle with TileIOParameters {
   val unused = Bits(width = control_word_size_bits)
 }
 
@@ -101,7 +101,7 @@ class ControlLongJumpResponseBits extends Bundle {
 // be ignored (and a message with data bits of 0 should be enqueued)
 // if the mask does not contain this tile's ID set.
 class ControlRequest extends Bundle with TileIOParameters {
-  val message_type = Bits(width = control_message_type_size_bits)
+  val message_type = Bits(width = control_type_size_bits)
   val mask = Bits(width = tile_count)
   val data = Bits(width = control_word_size_bits)
 }
