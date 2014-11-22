@@ -40,7 +40,7 @@ abstract trait TileIOParameters extends UsesParameters {
   val memory_transaction_tag_size_bits = params(MemoryTransactionTagSizeBits)
   val control_type_size_bits     = params(ControlTypeSizeBits)
   val control_word_size_bits     = params(ControlWordSizeBits)
-  val tile_count                 = params(TileCount)
+  val tile_count                 = params(Width) * params(Height)
 }
 
 class NetworkPacket extends Bundle with TileIOParameters {
@@ -54,11 +54,15 @@ class MemoryRequest(data_size: Int) extends Bundle with TileIOParameters {
   val tag   = UInt(width = memory_transaction_tag_size_bits)
   val data  = Bits(width = data_size)
   val wen   = Bool() // TRUE means this is a write, FALSE a read
+
+  override def clone() = new MemoryRequest(data_size).asInstanceOf[this.type]
 }
 
 class MemoryResponse(data_size: Int) extends Bundle with TileIOParameters {
   val tag  = UInt(width = memory_transaction_tag_size_bits)
   val data = Bits(width = data_size)
+
+  override def clone() = new MemoryResponse(data_size).asInstanceOf[this.type]
 }
 
 // The control messages are essentially tagged unions, but handled
@@ -122,8 +126,8 @@ class TileIO extends Bundle with TileIOParameters {
   // The ICache memory interface, which satisfies entire cache lines
   // at a time.  When you get a response back from this interface it's
   // safe to cache it forever.
-  val icache_resp = new DecoupledIO(new MemoryResponse(icache_line_size_bits)).asOutput
-  val icache_req  = new DecoupledIO(new MemoryRequest(icache_line_size_bits)).asOutput
+  val icache_resp = new DecoupledIO(new MemoryResponse(icache_line_size_bits))
+  val icache_req  = new DecoupledIO(new MemoryRequest(icache_line_size_bits))
 
   // The DCache memory interface, which only loads single words at a
   // time.  This consists of two FIFO pairs: one that handles requests
