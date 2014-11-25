@@ -4,6 +4,7 @@ object Main {
       "--debug",
       "--vcd")
 
+    Chisel.Driver.isDebug = true
     Chisel.Driver.chiselConfigMode = Some("instance")
     Chisel.Driver.chiselConfigClassName = Some("ExampleConfig")
     Chisel.Driver.chiselProjectName = Some("HurricaneFabric")

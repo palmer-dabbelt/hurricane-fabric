@@ -105,7 +105,7 @@ class ControlLongJumpResponseBits extends Bundle with TileIOParameters {
 // be ignored (and a message with data bits of 0 should be enqueued)
 // if the mask does not contain this tile's ID set.
 class ControlRequest extends Bundle with TileIOParameters {
-  val message_type = Bits(width = control_type_size_bits)
+  val message_type = Bits(OUTPUT, width = control_type_size_bits)
   val mask = Bits(width = tile_count)
   val data = Bits(width = control_word_size_bits)
 }
@@ -120,23 +120,23 @@ class ControlResponse extends Bundle with TileIOParameters {
 class TileIO extends Bundle with TileIOParameters {
   // The explicit network input/output ports
   // FIXME: Remove these and replace them with in-memory queues
-  val net_to_tile = Vec.fill(network_port_count){(new DecoupledIO(new NetworkPacket)).asInput}
-  val net_to_fabric = Vec.fill(network_port_count){(new DecoupledIO(new NetworkPacket)).asOutput}
+  val net_to_tile = Vec.fill(network_port_count){(new DecoupledIO(new NetworkPacket))}
+  val net_to_fabric = Vec.fill(network_port_count){(new DecoupledIO(new NetworkPacket))}
 
   // The ICache memory interface, which satisfies entire cache lines
   // at a time.  When you get a response back from this interface it's
   // safe to cache it forever.
-  val icache_resp = new DecoupledIO(new MemoryResponse(icache_line_size_bits))
-  val icache_req  = new DecoupledIO(new MemoryRequest(icache_line_size_bits))
+  val icache_resp = Decoupled(new MemoryResponse(icache_line_size_bits))
+  val icache_req  = Decoupled(new MemoryRequest(icache_line_size_bits))
 
   // The DCache memory interface, which only loads single words at a
   // time.  This consists of two FIFO pairs: one that handles requests
   // from the tile to the rest of the fabric, and one that handles
   // requests from the rest of the system to the tile.
-  val dcache_to_tile_req    = new DecoupledIO(new MemoryRequest(dcache_word_size_bits)).asOutput
-  val dcache_to_tile_resp   = new DecoupledIO(new MemoryResponse(dcache_word_size_bits)).asInput
-  val dcache_to_fabric_req  = new DecoupledIO(new MemoryRequest(dcache_word_size_bits)).asInput
-  val dcache_to_fabric_resp = new DecoupledIO(new MemoryResponse(dcache_word_size_bits)).asOutput
+  val dcache_to_tile_req    = Decoupled(new MemoryRequest(dcache_word_size_bits))
+  val dcache_to_tile_resp   = Decoupled(new MemoryResponse(dcache_word_size_bits))
+  val dcache_to_fabric_req  = Decoupled(new MemoryRequest(dcache_word_size_bits))
+  val dcache_to_fabric_resp = Decoupled(new MemoryResponse(dcache_word_size_bits))
 
   // The control FIFO pairs, which deal with getting arbitrary extra
   // information into each tile.  Each control request must produce
@@ -144,6 +144,6 @@ class TileIO extends Bundle with TileIOParameters {
   // order.  All control requests are broadcast to all tiles, and the
   // value of the control response bits are ORed together to produce a
   // single response back to the host.
-  val control_req  = new DecoupledIO(new ControlRequest).asOutput
-  val control_resp = new DecoupledIO(new ControlResponse).asInput
+  val control_req  = Decoupled(new ControlRequest).flip
+  val control_resp = Decoupled(new ControlResponse)
 }

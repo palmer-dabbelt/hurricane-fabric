@@ -1,3 +1,10 @@
+LANGUAGES   += c++
+COMPILEOPTS += -Wall
+COMPILEOPTS += -Wextra
+COMPILEOPTS += -Werror
+COMPILEOPTS += -pedantic
+COMPILEOPTS += -std=c++11
+
 LANGUAGES += scala
 
 LANGUAGES   += c++
@@ -15,7 +22,7 @@ SOURCES     += HurricaneFabric/Fabric.scala
 
 # An actual executable that can run tests against this multiplexer.
 LIBEXECS    += hurricane-fabric/test
-SOURCES     += Test/Main.scala
+SOURCES     += test/Main.scala
 COMPILEOPTS += -dFabric.ExampleConfig
 DEPLIBS     += hurricane-fabric
-SOURCES     += Test/main.c++
+SOURCES     += test/main.c++
