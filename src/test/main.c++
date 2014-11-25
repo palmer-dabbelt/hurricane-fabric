@@ -111,7 +111,17 @@ bool test_fabric::host_deq_cb(size_t cycle, const control_response& pkt)
 
 bool test_fabric::tile_enq_cb(size_t cycle, tile_id_t tid)
 {
-    return false;
+    auto l = _tile_in_flight.find(tid);
+    if (l == _tile_in_flight.end())
+        return false;
+    auto q = l->second;
+
+    auto message = q->front();
+    if (tile_enq(tid, message->response) == false)
+        return false;
+
+    q->pop();
+    return true;
 }
 
 bool test_fabric::tile_deq_cb(size_t cycle, tile_id_t tid, const control_request& pkt)

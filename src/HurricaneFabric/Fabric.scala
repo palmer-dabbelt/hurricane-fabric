@@ -38,7 +38,6 @@ class Fabric extends Module with FabricParameters {
   // A state machine for the control -- note that this is currently
   // _very_ simple in that it only allows one request/response pair in
   // the system at a time.
-  {
     val host_req :: tile_req :: tile_resp :: host_resp :: Nil = Enum(UInt(), 4)
     val state = Reg(init = host_req)
 
@@ -112,5 +111,4 @@ class Fabric extends Module with FabricParameters {
         }
       }
     }
-  }
 }

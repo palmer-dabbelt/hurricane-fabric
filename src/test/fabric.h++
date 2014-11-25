@@ -28,7 +28,7 @@ public:
      * that all of these can fail, in which case you'll have try again
      * next cycle. */
     bool host_enq(const control_request& pkt);
-    bool tile_enq(const control_response& pkt, size_t cycle);
+    bool tile_enq(tile_id_t tid, const control_response& pkt);
 
     /* These are essentially callback functions -- though they're
      * actually virtual instead.  */
@@ -47,6 +47,13 @@ private:
     control_response control_resp_bits(void) const;
     void control_req_valid(bool value);
     void control_resp_ready(bool value);
+
+    bool tile_control_resp_ready(tile_id_t tid) const;
+    bool tile_control_req_valid(tile_id_t tid) const;
+    void tile_control_resp_bits(tile_id_t tid, const control_response& pkt);
+    control_request tile_control_req_bits(tile_id_t tid) const;
+    void tile_control_resp_valid(tile_id_t tid, bool value);
+    void tile_control_req_ready(tile_id_t tid, bool value);
 };
 
 #endif

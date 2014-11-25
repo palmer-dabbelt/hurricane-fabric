@@ -1,6 +1,7 @@
 #include "fabric.h++"
 #include <numeric>
 #include <boost/iterator/counting_iterator.hpp>
+#include <boost/preprocessor/repeat.hpp>
 
 #define TILE_COUNT 16
 #define RESET_CYCLES 10
@@ -8,7 +9,7 @@
 fabric::fabric(void)
     : _dut(),
       _tiles(boost::counting_iterator<tile_id_t>(0),
-             boost::counting_iterator<tile_id_t>(TILE_COUNT-1)
+             boost::counting_iterator<tile_id_t>(TILE_COUNT)
           )
 {
     for (int cycle = 0; cycle < RESET_CYCLES; cycle++)
@@ -23,7 +24,11 @@ void fabric::step(size_t cycles)
         printf("cycle: %lu\n", cycle);
 
         control_req_valid(false);
-        control_resp_ready(true);
+        control_resp_ready(false);
+        for (auto tid: _tiles) {
+            tile_control_resp_valid(tid, true);
+            tile_control_req_ready(tid, true);
+        }
 
         _dut.clock_lo(false);
 
@@ -51,6 +56,16 @@ bool fabric::host_enq(const control_request& pkt)
 
     control_req_bits(pkt);
     control_req_valid(true);
+    return true;
+}
+
+bool fabric::tile_enq(tile_id_t tid, const control_response& pkt)
+{
+    if (tile_control_resp_ready(tid) == false)
+        return false;
+
+    tile_control_resp_bits(tid, pkt);
+    tile_control_resp_valid(tid, true);
     return true;
 }
 
@@ -86,4 +101,108 @@ void fabric::control_req_valid(bool value)
 void fabric::control_resp_ready(bool value)
 {
     _dut.Fabric__io_control_resp_ready = value;
+}
+
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
+bool fabric::tile_control_resp_ready(tile_id_t tid) const
+{
+#define CASERET(_, I, __)                                               \
+    case I:                                                             \
+        return _dut.Fabric__io_tiles_ ## I ## _control_resp_ready.values[0] == 1;
+
+    switch (tid) {
+        BOOST_PP_REPEAT(TILE_COUNT, CASERET, _)
+    }
+
+    fprintf(stderr, "Unknown TID: %lu\n", tid);
+    abort();
+    return false;
+#undef CASERET
+}
+
+bool fabric::tile_control_req_valid(tile_id_t tid) const
+{
+#define CASERET(_, I, __)                                               \
+    case I:                                                             \
+        return _dut.Fabric__io_tiles_ ## I ## _control_req_valid.values[0] == 1;
+
+    switch (tid) {
+        BOOST_PP_REPEAT(TILE_COUNT, CASERET, _)
+    }
+
+    fprintf(stderr, "Unknown TID: %lu\n", tid);
+    abort();
+    return false;
+#undef CASERET
+}
+
+void fabric::tile_control_resp_bits(tile_id_t tid, const control_response& pkt)
+{
+#define CASERET(_, I, __)                                               \
+    case I:                                                             \
+        _dut.Fabric__io_tiles_ ## I ## _control_resp_bits_data == pkt.data; \
+        break;
+
+    switch (tid) {
+        BOOST_PP_REPEAT(TILE_COUNT, CASERET, _)
+    }
+
+    fprintf(stderr, "Unknown TID: %lu\n", tid);
+    abort();
+#undef CASERET
+}
+
+control_request fabric::tile_control_req_bits(tile_id_t tid) const
+{
+    control_request out;
+
+#define CASERET(_, I, __)                                               \
+    case I:                                                             \
+        out.type = _dut.Fabric__io_tiles_ ## I ## _control_req_bits_message_type.values[0]; \
+        out.mask = _dut.Fabric__io_tiles_ ## I ## _control_req_bits_mask.values[0]; \
+        out.data = _dut.Fabric__io_tiles_ ## I ## _control_req_bits_data.values[0]; \
+        break;
+
+    switch (tid) {
+        BOOST_PP_REPEAT(TILE_COUNT, CASERET, _)
+    }
+
+    fprintf(stderr, "Unknown TID: %lu\n", tid);
+    abort();
+#undef CASERET
+
+    return out;
+}
+
+void fabric::tile_control_resp_valid(tile_id_t tid, bool value)
+{
+#define CASERET(_, I, __)                                             \
+    case I:                                                           \
+        _dut.Fabric__io_tiles_ ## I ## _control_resp_valid = value;   \
+        return;
+
+    switch (tid) {
+        BOOST_PP_REPEAT(TILE_COUNT, CASERET, _)
+    }
+
+    fprintf(stderr, "Unknown TID: %lu\n", tid);
+    abort();
+#undef CASERET
+}
+
+void fabric::tile_control_req_ready(tile_id_t tid, bool value)
+{
+#define CASERET(_, I, __)                                               \
+    case I:                                                             \
+        _dut.Fabric__io_tiles_ ## I ## _control_req_ready = value;      \
+        return;
+
+    switch (tid) {
+        BOOST_PP_REPEAT(TILE_COUNT, CASERET, _)
+    }
+
+    fprintf(stderr, "Unknown TID: %lu\n", tid);
+    abort();
+#undef CASERET
 }
