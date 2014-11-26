@@ -19,15 +19,23 @@ fabric::fabric(void)
 void fabric::step(size_t cycles)
 {
     FILE *vcd = fopen("fabric.vcd", "w");
+    auto req = control_request::random();
+    auto resp = control_response::random();
+    req.type = 0;
+    req.mask = 0;
+    req.data = 0;
+    resp.data = 0;
 
     for (auto cycle = 0*cycles; cycle < cycles; cycle++) {
         printf("cycle: %lu\n", cycle);
 
         control_req_valid(false);
         control_resp_ready(false);
+        control_req_bits(req);
         for (auto tid: _tiles) {
-            tile_control_resp_valid(tid, true);
-            tile_control_req_ready(tid, true);
+            tile_control_resp_valid(tid, false);
+            tile_control_req_ready(tid, false);
+            tile_control_resp_bits(tid, resp);
         }
 
         _dut.clock_lo(false);
@@ -38,6 +46,16 @@ void fabric::step(size_t cycles)
             auto bits = control_resp_bits();
             auto handled = host_deq_cb(cycle, bits);
             control_resp_ready(handled);
+        }
+
+        for (auto tid: _tiles) {
+            tile_enq_cb(cycle, tid);
+
+            if (tile_control_req_valid(tid)) {
+                auto bits = tile_control_req_bits(tid);
+                auto handled = tile_deq_cb(cycle, tid, bits);
+                tile_control_req_ready(tid, handled);
+            }
         }
 
         _dut.clock_lo(false);
@@ -81,9 +99,9 @@ bool fabric::control_resp_valid(void) const
 
 void fabric::control_req_bits(const control_request& pkt)
 {
-    _dut.Fabric__io_control_req_bits_message_type = pkt.type;
-    _dut.Fabric__io_control_req_bits_mask = pkt.mask;
-    _dut.Fabric__io_control_req_bits_data = pkt.data;
+    _dut.Fabric__io_control_req_bits_message_type.values[0] = pkt.type;
+    _dut.Fabric__io_control_req_bits_mask.values[0] = pkt.mask;
+    _dut.Fabric__io_control_req_bits_data.values[0] = pkt.data;
 }
 
 control_response fabric::control_resp_bits(void) const
@@ -141,8 +159,8 @@ void fabric::tile_control_resp_bits(tile_id_t tid, const control_response& pkt)
 {
 #define CASERET(_, I, __)                                               \
     case I:                                                             \
-        _dut.Fabric__io_tiles_ ## I ## _control_resp_bits_data == pkt.data; \
-        break;
+        _dut.Fabric__io_tiles_ ## I ## _control_resp_bits_data = pkt.data; \
+        return;
 
     switch (tid) {
         BOOST_PP_REPEAT(TILE_COUNT, CASERET, _)
@@ -162,7 +180,7 @@ control_request fabric::tile_control_req_bits(tile_id_t tid) const
         out.type = _dut.Fabric__io_tiles_ ## I ## _control_req_bits_message_type.values[0]; \
         out.mask = _dut.Fabric__io_tiles_ ## I ## _control_req_bits_mask.values[0]; \
         out.data = _dut.Fabric__io_tiles_ ## I ## _control_req_bits_data.values[0]; \
-        break;
+        return out;
 
     switch (tid) {
         BOOST_PP_REPEAT(TILE_COUNT, CASERET, _)

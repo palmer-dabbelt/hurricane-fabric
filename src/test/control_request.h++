@@ -16,11 +16,28 @@ public:
     static control_request random(void)
         {
             control_request out;
-            out.type = rand();
-            out.mask = rand();
+            out.type = rand() & 0x3;
+            out.mask = rand() & 0xFFFF;
             out.data = rand();
             return out;
         }
 };
+
+static inline bool operator==(const control_request& a, const control_request& b)
+{
+    if (a.type != b.type)
+        return false;
+    if (a.mask != b.mask)
+        return false;
+    if (a.data != b.data)
+        return false;
+
+    return true;
+}
+
+static inline bool operator!=(const control_request& a, const control_request& b)
+{
+    return !(a == b);
+}
 
 #endif

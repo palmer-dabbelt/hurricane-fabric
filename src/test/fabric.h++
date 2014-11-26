@@ -37,6 +37,9 @@ public:
     virtual bool tile_enq_cb(size_t cycle, tile_id_t tid) = 0;
     virtual bool tile_deq_cb(size_t cycle, tile_id_t tid, const control_request& pkt) = 0;
 
+    /* Lists all the tiles in this fabric. */
+    const std::vector<tile_id_t>& tiles(void) const { return _tiles; }
+
 private:
     /* Easy accessor methods to allow access to the internal DUT
      * fields, which aim to be type (and probably more importantly,

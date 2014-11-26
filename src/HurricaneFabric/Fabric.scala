@@ -50,9 +50,9 @@ class Fabric extends Module with FabricParameters {
     // By default don't allow anything to pass through at all
     io.control_req .ready := Bool(false)
     io.control_resp.valid := Bool(false)
-    io.control_resp.bits.data := response.fold(Bits(0)){ _.toBits | _.toBits }
+    io.control_resp.bits.data := response.map{r => r.data}.fold(Bits(0)){ _ | _ }
     io.tiles.foreach{ tile =>
-      tile.control_req .valid := Bool(false)
+      tile.control_req.valid  := Bool(false)
       tile.control_req.bits   := request
       tile.control_resp.ready := Bool(false)
     }
@@ -63,8 +63,8 @@ class Fabric extends Module with FabricParameters {
 
         request := io.control_req.bits
 
-        sent      := ~io.control_req.bits.mask
-        responded := ~io.control_req.bits.mask
+        sent      := UInt(0)
+        responded := UInt(0)
 
         when (io.control_req.valid === Bool(true)) {
           state := tile_req
