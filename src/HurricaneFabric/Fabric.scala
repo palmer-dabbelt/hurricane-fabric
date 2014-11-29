@@ -5,11 +5,13 @@ import Chisel._
 // The absolute size of the Hurricane array that will be generated
 case object Width extends Field[Int]
 case object Height extends Field[Int]
+case object NetworkQueueDepth extends Field[Int]
 
 abstract trait FabricParameters extends UsesParameters {
   val width      = params(Width)
   val height     = params(Height)
   val tile_count = width * height
+  val network_queue_depth = params(NetworkQueueDepth)
 }
 
 // A single Hurricane virtual cache -- note that this cache doesn't
@@ -35,6 +37,9 @@ class Fabric extends Module with FabricParameters {
   }
   val io = new IO
 
+  /////////////////////////////////////////////////////////////////////
+  // Control
+  /////////////////////////////////////////////////////////////////////
   // A state machine for the control -- note that this is currently
   // _very_ simple in that it only allows one request/response pair in
   // the system at a time.
@@ -108,6 +113,54 @@ class Fabric extends Module with FabricParameters {
 
       when (io.control_resp.ready === Bool(true)) {
         state := host_req
+      }
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////
+  // Tile-to-Tile Network
+  /////////////////////////////////////////////////////////////////////
+  for (y <- 0 until height) {
+    for (x <- 0 until width) {
+      // Hooks these up in the following directions:
+      //   0: North
+      //   1: East
+      //   2: South
+      //   4: West
+      if (y > 0) {
+        val q = Module(new Queue(new NetworkPacket, network_queue_depth))
+        io.tiles((y * width) + x).net_to_tile(0) <> q.io.deq
+        io.tiles(((y - 1) * width) + (x + 0)).net_to_fabric(2) <> q.io.enq
+      } else {
+        io.tiles((y * width) + x).net_to_tile(0).valid := Bool(false)
+        io.tiles((y * width) + x).net_to_fabric(0).ready := Bool(false)
+      }
+
+      if (x < (width - 1)) {
+        val q = Module(new Queue(new NetworkPacket, network_queue_depth))
+        io.tiles((y * width) + x).net_to_tile(1) <> q.io.deq
+        io.tiles(((y + 0) * width) + (x + 1)).net_to_fabric(3) <> q.io.enq
+      } else {
+        io.tiles((y * width) + x).net_to_tile(1).valid := Bool(false)
+        io.tiles((y * width) + x).net_to_fabric(1).ready := Bool(false)
+      }
+
+      if (y < (height - 1)) {
+        val q = Module(new Queue(new NetworkPacket, network_queue_depth))
+        io.tiles((y * width) + x).net_to_tile(2) <> q.io.deq
+        io.tiles(((y + 1) * width) + (x + 0)).net_to_fabric(0) <> q.io.enq
+      } else {
+        io.tiles((y * width) + x).net_to_tile(2).valid := Bool(false)
+        io.tiles((y * width) + x).net_to_fabric(2).ready := Bool(false)
+      }
+
+      if (x > 0) {
+        val q = Module(new Queue(new NetworkPacket, network_queue_depth))
+        io.tiles((y * width) + x).net_to_tile(3) <> q.io.deq
+        io.tiles(((y + 0) * width) + (x - 1)).net_to_fabric(1) <> q.io.enq
+      } else {
+        io.tiles((y * width) + x).net_to_tile(3).valid := Bool(false)
+        io.tiles((y * width) + x).net_to_fabric(3).ready := Bool(false)
       }
     }
   }

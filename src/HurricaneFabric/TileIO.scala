@@ -120,8 +120,8 @@ class ControlResponse extends Bundle with TileIOParameters {
 class TileIO extends Bundle with TileIOParameters {
   // The explicit network input/output ports
   // FIXME: Remove these and replace them with in-memory queues
-  val net_to_tile = Vec.fill(network_port_count){(new DecoupledIO(new NetworkPacket))}
-  val net_to_fabric = Vec.fill(network_port_count){(new DecoupledIO(new NetworkPacket))}
+  val net_to_tile = Vec.fill(network_port_count){Decoupled(new NetworkPacket).flip}
+  val net_to_fabric = Vec.fill(network_port_count){Decoupled(new NetworkPacket)}
 
   // The ICache memory interface, which satisfies entire cache lines
   // at a time.  When you get a response back from this interface it's

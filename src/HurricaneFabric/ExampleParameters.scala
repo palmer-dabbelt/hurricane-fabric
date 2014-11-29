@@ -59,6 +59,8 @@ class ExampleConfig extends Chisel.ChiselConfig (
       case HurricaneFabric.MemoryTransactionTagSizeBits => 1
       case ControlTypeSizeBits => 4
       case ControlWordSizeBits => 64
+
+      case HurricaneFabric.NetworkQueueDepth => 3
   }},
   knobValues = {
     case "NTILES" => 2
